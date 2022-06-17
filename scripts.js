@@ -1,12 +1,16 @@
 //Обьявление переменных
 var canvas = document.getElementById("canvas");
-var canvasWidth = 600;
-var canvasHeight = 870;
-var I = 25;
 var canvasContext = canvas.getContext("2d");
 var playerColor = "White";
+var xDirection = 10;
 
 //Обьявление обьектов
+var GAME = {
+    width: 600,
+    height: 870,
+    ifLost: false,
+    backgroudnColor: "red",
+}
 var PLAYER = {
     x: 275,
     y: 800,
@@ -18,20 +22,20 @@ var PLAYER = {
 }
 
 var METEOR = {
-    x: canvasWidth * 0.5 + 1,
+    x: GAME.width * 0.5 + 1,
     y: 100,
     size: 20,
     color: "black"
 }
 
 //Настройки
-canvas.width = canvasWidth;
-canvas.height = canvasHeight;
+canvas.width = GAME.width;
+canvas.height = GAME.height;
 
 //Функции
 function drawBackground() {
-    canvasContext.fillStyle = "red";
-    canvasContext.fillRect(0, 0, canvasWidth, canvasHeight);
+    canvasContext.fillStyle = GAME.backgroudnColor;
+    canvasContext.fillRect(0, 0, GAME.width, GAME.height);
 }
 
 function drawPlayer() {
@@ -56,11 +60,40 @@ function drawFrame() {
     drawMeteor();
 }
 
+function initEventListeners() {
+    window.addEventListener("mousemove", onmousemove);
+    window.addEventListener("keydown", onkeydown);
+}
+
+// function onmousemove(event) {
+//     if (event.clientX < GAME.width) {
+//         PLAYER.x = event.clientX - PLAYER.width / 2;
+//     } else {
+//         PLAYER.x = GAME.width - PLAYER.width
+//     }
+// }
+
+function onkeydown(event){
+    if (event.key === "ArrowLeft"){
+        PLAYER.x = PLAYER.x - xDirection
+    }
+    if (event.key === "ArrowRight"){
+        PLAYER.x = PLAYER.x + xDirection
+    }
+    if (PLAYER.x < 0){
+        PLAYER.x = 0
+    }
+    if (PLAYER.x + PLAYER.width > GAME.width){
+        PLAYER.x = GAME.width - PLAYER.width
+    }
+}
+
 function play() {
     drawFrame();
     updateMeteor();
     requestAnimationFrame(play);
 }
-drawBackground("red");
+
+initEventListeners();
 play();
 
