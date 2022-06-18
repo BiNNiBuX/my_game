@@ -7,6 +7,15 @@ var maxSize = 50;
 var minSize = 20;
 var minSpeed = 10;
 var maxSpeed = 30;
+var bgPic = new Image();
+bgPic.src = 'img/bg.png'
+var nlo = new Image();
+nlo.src = 'img/nlo.png';
+var playerPic = new Image();
+playerPic.src = 'img/hero.png';
+var meteorPic = new Image();
+meteorPic.src = 'img/meteor.png';
+
 
 //Обьявление обьектов
 var GAME = {
@@ -14,23 +23,25 @@ var GAME = {
     height: 870,
     ifLost: false,
     backgroudnColor: "red",
+    bgPic: new Image(),
 }
 var PLAYER = {
     x: 275,
-    y: 800,
+    y: 700,
     color: "white",
-    width: 50,
-    height: 20,
+    width: 55,
+    height: 135,
     score: 0,
     lives: 3,
+    playerPic: new Image(),
 }
 
 var METEOR = {
-    x: Math.floor(Math.random() * (GAME.width - maxSize * 2) + maxSize),
-    y: -maxSize,
-    size: Math.floor(Math.random() * maxSize + minSize),
-    speedy: Math.floor(Math.random() * maxSpeed + minSpeed),
-    color: "black",
+    x: Math.floor(Math.random() * (GAME.width - maxSize)),
+    width: Math.floor(Math.random() * maxSize + minSize),
+    y: - maxSize,
+    speedy: 10,
+    meteorPic: new Image(),
 }
 
 var InfoWindow = {
@@ -41,14 +52,41 @@ var InfoWindow = {
     textColor: "white",
 }
 
+var ENEMY = {
+    width: 222,
+    height: 122,
+    nlo: new Image(),
+}
+
 //Настройки
 canvas.width = GAME.width + InfoWindow.width;
 canvas.height = GAME.height;
 
 //Функции
+bgPic.onload = function () {
+    GAME.bgPic = bgPic
+}
+meteorPic.onload = function () {
+    METEOR.meteorPic = meteorPic
+}
+
+playerPic.onload = function () {
+    PLAYER.playerPic = playerPic
+}
+
+nlo.onload = function () {
+    ENEMY.nlo = nlo;
+}
+
+function drawEnemy() {
+    if (ENEMY.nlo) {
+        canvasContext.drawImage(ENEMY.nlo, (GAME.width - ENEMY.width) / 2, 0, ENEMY.width, ENEMY.height)
+    }
+}
+
 function drawBackground() {
     canvasContext.fillStyle = GAME.backgroudnColor;
-    canvasContext.fillRect(0, 0, GAME.width, GAME.height);
+    canvasContext.drawImage(GAME.bgPic, 0, 0, GAME.width, GAME.height);
 }
 
 function drawInfoWindow() {
@@ -63,29 +101,32 @@ function drawInfoWindow() {
 
 function drawPlayer() {
     canvasContext.fillStyle = PLAYER.color;
-    canvasContext.fillRect(PLAYER.x, PLAYER.y, PLAYER.width, PLAYER.height);
+    if (PLAYER.playerPic) {
+        canvasContext.drawImage(PLAYER.playerPic, PLAYER.x, PLAYER.y, PLAYER.width, PLAYER.height);
+    }
 }
 
 function drawMeteor() {
-    canvasContext.fillStyle = METEOR.color;
-    canvasContext.beginPath();
-    canvasContext.arc(METEOR.x, METEOR.y, METEOR.size, 0, 2 * Math.PI);
-    canvasContext.fill();
+    if (METEOR.meteorPic) {
+        console.log(METEOR.meteorPic + ' ' + METEOR.x + ' ' + METEOR.y + ' ' + METEOR.width + ' ' + METEOR.width * 1.7)
+        canvasContext.drawImage(METEOR.meteorPic, METEOR.x, METEOR.y, METEOR.width, METEOR.width * 1.7);
+    }
 }
 
+
 function respawnMeteor() {
-    METEOR.size = Math.floor(Math.random() * maxSize + minSize);
-    METEOR.x = Math.floor(Math.random() * (GAME.width - METEOR.size * 2) + METEOR.size);
-    METEOR.y = -METEOR.size;
+    METEOR.y = -METEOR.width;
+    METEOR.width = Math.floor(Math.random() * maxSize + minSize);
+    METEOR.x = Math.floor(Math.random() * (GAME.width - METEOR.width));
     METEOR.speedy = Math.floor(Math.random() * maxSpeed + minSpeed);
 }
 
 function updateMeteor() {
     METEOR.y += METEOR.speedy;
-    var losePositionY = METEOR.y + METEOR.size >= PLAYER.y;
-    var losePositionX = (METEOR.x - METEOR.size <= PLAYER.x + PLAYER.width) && (METEOR.x + METEOR.size >= PLAYER.x);
-    var scoreUpdate = METEOR.y >= GAME.height + METEOR.size;
-    if (scoreUpdate){
+    var losePositionY = METEOR.y + METEOR.width >= PLAYER.y;
+    var losePositionX = (METEOR.x - METEOR.width <= PLAYER.x + PLAYER.width) && (METEOR.x + METEOR.width >= PLAYER.x);
+    var scoreUpdate = METEOR.y >= GAME.height + METEOR.width;
+    if (scoreUpdate) {
         respawnMeteor();
         PLAYER.score++;
         console.log(PLAYER.score)
@@ -93,7 +134,7 @@ function updateMeteor() {
     if (losePositionX && losePositionY) {
         PLAYER.lives -= 1;
         respawnMeteor();
-        if (PLAYER.lives === 0){
+        if (PLAYER.lives === 0) {
             GAME.ifLost = true;
         }
     }
@@ -101,6 +142,7 @@ function updateMeteor() {
 
 function drawFrame() {
     drawBackground();
+    drawEnemy();
     drawPlayer();
     drawMeteor();
     drawInfoWindow();
@@ -139,7 +181,7 @@ function onkeydown(event) {
 }
 
 function play() {
-    if (GAME.ifLost === false){
+    if (GAME.ifLost === false) {
         drawFrame();
         updateMeteor();
         requestAnimationFrame(play);
