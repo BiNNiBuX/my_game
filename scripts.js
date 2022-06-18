@@ -3,6 +3,10 @@ var canvas = document.getElementById("canvas");
 var canvasContext = canvas.getContext("2d");
 var playerColor = "White";
 var xDirection = 10;
+var maxSize = 50;
+var minSize = 20;
+var minSpeed = 10;
+var maxSpeed = 30;
 
 //Обьявление обьектов
 var GAME = {
@@ -18,24 +22,43 @@ var PLAYER = {
     width: 50,
     height: 20,
     score: 0,
-    live: 3,
+    lives: 3,
 }
 
 var METEOR = {
-    x: GAME.width * 0.5 + 1,
-    y: 100,
-    size: 20,
-    color: "black"
+    x: Math.floor(Math.random() * (GAME.width - maxSize * 2) + maxSize),
+    y: -maxSize,
+    size: Math.floor(Math.random() * maxSize + minSize),
+    speedy: Math.floor(Math.random() * maxSpeed + minSpeed),
+    color: "black",
+}
+
+var InfoWindow = {
+    width: 200,
+    height: GAME.height,
+    x: GAME.width,
+    backgroudnColor: "black",
+    textColor: "white",
 }
 
 //Настройки
-canvas.width = GAME.width;
+canvas.width = GAME.width + InfoWindow.width;
 canvas.height = GAME.height;
 
 //Функции
 function drawBackground() {
     canvasContext.fillStyle = GAME.backgroudnColor;
     canvasContext.fillRect(0, 0, GAME.width, GAME.height);
+}
+
+function drawInfoWindow() {
+    canvasContext.fillStyle = InfoWindow.backgroudnColor;
+    canvasContext.fillRect(InfoWindow.x, 0, InfoWindow.width, InfoWindow.height);
+    canvasContext.fillStyle = InfoWindow.textColor;
+    canvasContext.beginPath();
+    canvasContext.font = "30px serif";
+    canvasContext.fillText("Your Score: " + PLAYER.score, InfoWindow.x + 10, 50);
+    canvasContext.fillText("Your Lives: " + PLAYER.lives, InfoWindow.x + 10, 120);
 }
 
 function drawPlayer() {
@@ -50,14 +73,37 @@ function drawMeteor() {
     canvasContext.fill();
 }
 
+function respawnMeteor() {
+    METEOR.size = Math.floor(Math.random() * maxSize + minSize);
+    METEOR.x = Math.floor(Math.random() * (GAME.width - METEOR.size * 2) + METEOR.size);
+    METEOR.y = -METEOR.size;
+    METEOR.speedy = Math.floor(Math.random() * maxSpeed + minSpeed);
+}
+
 function updateMeteor() {
-    METEOR.y += 5;
+    METEOR.y += METEOR.speedy;
+    var losePositionY = METEOR.y + METEOR.size >= PLAYER.y;
+    var losePositionX = (METEOR.x - METEOR.size <= PLAYER.x + PLAYER.width) && (METEOR.x + METEOR.size >= PLAYER.x);
+    var scoreUpdate = METEOR.y >= GAME.height + METEOR.size;
+    if (scoreUpdate){
+        respawnMeteor();
+        PLAYER.score++;
+        console.log(PLAYER.score)
+    }
+    if (losePositionX && losePositionY) {
+        PLAYER.lives -= 1;
+        respawnMeteor();
+        if (PLAYER.lives === 0){
+            GAME.ifLost = true;
+        }
+    }
 }
 
 function drawFrame() {
     drawBackground();
     drawPlayer();
     drawMeteor();
+    drawInfoWindow();
 }
 
 function initEventListeners() {
@@ -65,33 +111,42 @@ function initEventListeners() {
     window.addEventListener("keydown", onkeydown);
 }
 
-// function onmousemove(event) {
-//     if (event.clientX < GAME.width) {
-//         PLAYER.x = event.clientX - PLAYER.width / 2;
-//     } else {
-//         PLAYER.x = GAME.width - PLAYER.width
-//     }
-// }
+function onmousemove(event) {
+    if ((event.clientX + PLAYER.width < GAME.width) && (event.clientX - PLAYER.width / 2 > 0)) {
+        PLAYER.x = event.clientX - PLAYER.width / 2;
+    } else {
+        if ((event.clientX + PLAYER.width > GAME.width)) {
+            PLAYER.x = GAME.width - PLAYER.width;
+        } else {
+            PLAYER.x = 0;
+        }
+    }
+}
 
-function onkeydown(event){
-    if (event.key === "ArrowLeft"){
+function onkeydown(event) {
+    if (event.key === "ArrowLeft") {
         PLAYER.x = PLAYER.x - xDirection
     }
-    if (event.key === "ArrowRight"){
+    if (event.key === "ArrowRight") {
         PLAYER.x = PLAYER.x + xDirection
     }
-    if (PLAYER.x < 0){
+    if (PLAYER.x < 0) {
         PLAYER.x = 0
     }
-    if (PLAYER.x + PLAYER.width > GAME.width){
+    if (PLAYER.x + PLAYER.width > GAME.width) {
         PLAYER.x = GAME.width - PLAYER.width
     }
 }
 
 function play() {
-    drawFrame();
-    updateMeteor();
-    requestAnimationFrame(play);
+    if (GAME.ifLost === false){
+        drawFrame();
+        updateMeteor();
+        requestAnimationFrame(play);
+    } else {
+        drawFrame();
+        alert("You lost");
+    }
 }
 
 initEventListeners();
